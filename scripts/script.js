@@ -6,9 +6,10 @@ const todoList = document.querySelector('.todo-list');
 const todoComplete = document.querySelector('.todo-completed');
 
 const value = localStorage.getItem('value');
-const parse = JSON.parse(value);
 
-const todoData = [...parse ?? []];
+const parse = value ? JSON.parse(value) : [];
+
+const todoData = [...parse];
 
 const render = function () {
     todoList.innerText = '';
