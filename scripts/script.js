@@ -62,7 +62,7 @@ todoControl.addEventListener('submit', function (event) {
             value: headerInput.value,
             completed: false
         };
-        todoData.push(newTodo);
+        todoData.unshift(newTodo);
         localStorage.setItem('value', JSON.stringify(todoData));
         headerInput.value = '';
         render();
