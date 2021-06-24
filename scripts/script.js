@@ -1,71 +1,114 @@
 'use strict';
 
-const todoControl = document.querySelector('.todo-control');
-const headerInput = document.querySelector('.header-input');
-const todoList = document.querySelector('.todo-list');
-const todoComplete = document.querySelector('.todo-completed');
+class Todo {
+    constructor(form, input, todoList, todoCompleted, container) {
+        this.input = document.querySelector(input);
+        this.container = document.querySelector(container);
+        this.todoList = document.querySelector(todoList);
+        this.form = document.querySelector(form);
+        this.todoCompleted = document.querySelector(todoCompleted);
+        this.todoData = new Map(JSON.parse(localStorage.getItem('toDoList')));
+        this.currentKey = '';
+    }
 
-const value = localStorage.getItem('value');
+    render() {
+        this.input.value =''
+        this.todoList.textContent = '';
+        this.todoCompleted.textContent = '';
+        this.todoData.forEach(this.createItem);
+        this.addToStorage();
+    }
 
-const parse = value ? JSON.parse(value) : [];
+    addToStorage() {
+        localStorage.setItem('toDoList', JSON.stringify([...this.todoData]));
+    }
 
-const todoData = [...parse];
-
-const render = function () {
-    todoList.innerText = '';
-    todoComplete.innerText = '';
-
-    todoData.forEach(function (item, index) {
+    createItem = (todo) => {
         const li = document.createElement('li');
+        li.key = todo.key;
         li.classList.add('todo-item');
-        li.setAttribute('data-index', index);
-        li.innerHTML = `<span class="text-todo">${item.value}</span>
-                        <div class="todo-buttons">
-                           <button class="todo-remove"></button>
-                           <button class="todo-complete"></button>
-                        </div>`
-        if (item.completed) {
-            todoComplete.append(li);
+        li.insertAdjacentHTML('beforeend',
+            `<span class="text-todo">${todo.value}</span>
+         <div class="todo-buttons">
+              <button class="todo-remove"></button>
+              <button class="todo-complete"></button>
+          </div>`);
+
+        if (todo.completed) {
+            this.todoCompleted.prepend(li);
         } else {
-            todoList.append(li);
+            this.todoList.prepend(li);
         }
-        const todoRemove = li.querySelectorAll('.todo-remove');
-        todoRemove.forEach(function (item) {
-            item.addEventListener('click', function () {
-                const arrElem = this.parentNode.parentNode
-                const indexElement = arrElem.dataset.index;
-                todoData.splice(indexElement, 1);
+    }
 
-                localStorage.setItem('value', JSON.stringify(todoData));
-                render();
-            })
+    addTodo(e) {
+        e.preventDefault();
+        if (this.input.value.trim()) {
+            const newTodo = {
+                value: this.input.value,
+                completed: false,
+                key: this.generateKey(),
+            };
+            this.todoData.set(newTodo.key, newTodo);
+            this.render();
+        } else {
+            this.input.style.border = '2px solid red';
+            this.input.placeholder = 'Поле не должно быть пустым'
+            setTimeout(() => {
+                this.input.style.border = '';
+                this.input.placeholder = 'Какие планы?'
+            }, 2000)
+        }
+    }
+
+    generateKey() {
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+
+    deleteItem() {
+        this.todoData.forEach((item,index)=> {
+            if (item.key === this.currentKey) {
+this.todoData.delete(index)
+            }
         })
-        const btnTodoComplete = li.querySelector('.todo-complete');
-        btnTodoComplete.addEventListener('click', function () {
+        this.render()
+    }
 
-            item.completed = !item.completed;
+    completedItem() {
+        this.todoData.forEach((item)=>{
+            if(item.key===this.currentKey){
+                item.completed=!item.completed
+            }
+            this.render()
+        })
+        for (let i=0;i<this.todoList.children.length;i++){
 
-            todoData[index] = item;
+        }
 
-            localStorage.setItem('value', JSON.stringify(todoData))
+    }
 
-            render();
-        });
-    });
+    handler(item) {
+        item.addEventListener('click', (e) => {
+            const target = e.target;
+
+            if (target.matches('.todo-complete')) {
+                this.currentKey = target.closest('.todo-item').key
+
+                this.completedItem();
+            } else if (target.matches('.todo-remove')) {
+                this.currentKey = target.closest('.todo-item').key
+                this.deleteItem();
+            }
+        })
+    }
+
+    init() {
+        this.form.addEventListener('submit', this.addTodo.bind(this));
+        this.render();
+        this.handler(this.container)
+    }
 }
 
 
-todoControl.addEventListener('submit', function (event) {
-    event.preventDefault();
-    if (headerInput.value.trim() !== '') {
-        const newTodo = {
-            value: headerInput.value,
-            completed: false
-        };
-        todoData.unshift(newTodo);
-        localStorage.setItem('value', JSON.stringify(todoData));
-        headerInput.value = '';
-        render();
-    }
-});
-render();
+const todo = new Todo('.todo-control', '.header-input', '.todo-list', '.todo-completed', '.todo-container');
+todo.init()
